@@ -16,6 +16,7 @@ public enum Category {
     STUDY("Study", TransactionType.EXPENSE),
     HEALTH("Health", TransactionType.EXPENSE),
     ENTERTAINMENT("Entertainment", TransactionType.EXPENSE),
+    CLOTHING("Clothing", TransactionType.EXPENSE),
     OTHER_EXPENSE("Other expense", TransactionType.EXPENSE);
 
     private final String label;
