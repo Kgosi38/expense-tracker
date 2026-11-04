@@ -5,6 +5,9 @@ import za.co.kgosi.expensetracker.model.TransactionType;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import za.co.kgosi.expensetracker.model.Category;
+import java.time.LocalDate;
+import java.time.YearMonth;
 
 public class TransactionService {
 
@@ -49,5 +52,62 @@ public class TransactionService {
 
     public BigDecimal getBalance() {
         return getTotalIncome().subtract(getTotalExpenses());
+    }
+
+    public List<Transaction> getTransactionsByCategory(Category category) {
+        if (category == null) {
+            throw new IllegalArgumentException(
+                    "Category cannot be null."
+            );
+        }
+
+        List<Transaction> results = new ArrayList<>();
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getCategory() == category) {
+                results.add(transaction);
+            }
+        }
+
+        return results;
+    }
+
+    public List<Transaction> getTransactionsByDate(LocalDate date) {
+        if (date == null) {
+            throw new IllegalArgumentException(
+                    "Date cannot be null."
+            );
+        }
+
+        List<Transaction> results = new ArrayList<>();
+
+        for (Transaction transaction : transactions) {
+            if (transaction.getDate().equals(date)) {
+                results.add(transaction);
+            }
+        }
+
+        return results;
+    }
+
+    public List<Transaction> getTransactionsByMonth(YearMonth month) {
+        if (month == null) {
+            throw new IllegalArgumentException(
+                    "Month cannot be null."
+            );
+        }
+
+        List<Transaction> results = new ArrayList<>();
+
+        for (Transaction transaction : transactions) {
+            YearMonth transactionMonth =
+                    YearMonth.from(transaction.getDate());
+
+            if (transactionMonth.equals(month)) {
+                results.add(transaction);
+            }
+        }
+
+        return results;
     }
 }

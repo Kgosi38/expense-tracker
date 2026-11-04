@@ -8,6 +8,7 @@ import za.co.kgosi.expensetracker.model.TransactionType;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.time.YearMonth;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -245,6 +246,174 @@ class TransactionServiceTest {
         assertEquals(
                 0,
                 new BigDecimal("-500.00").compareTo(service.getBalance())
+        );
+    }
+
+    @Test
+    void filtersTransactionsByCategory() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 4)
+        );
+
+        Transaction dinner = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200"),
+                Category.FOOD,
+                "Dinner",
+                LocalDate.of(2026, 11, 4)
+        );
+
+        Transaction salary = new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000"),
+                Category.SALARY,
+                "Salary",
+                LocalDate.of(2026, 11, 4)
+        );
+
+        service.addTransaction(groceries);
+        service.addTransaction(dinner);
+        service.addTransaction(salary);
+
+        List<Transaction> foodTransactions =
+                service.getTransactionsByCategory(Category.FOOD);
+
+        assertEquals(2, foodTransactions.size());
+        assertEquals(groceries, foodTransactions.get(0));
+        assertEquals(dinner, foodTransactions.get(1));
+    }
+
+    @Test
+    void rejectsNullCategoryFilter() {
+        TransactionService service = new TransactionService();
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getTransactionsByCategory(null)
+        );
+
+        assertEquals(
+                "Category cannot be null.",
+                error.getMessage()
+        );
+    }
+
+    @Test
+    void filtersTransactionsByDate() {
+        TransactionService service = new TransactionService();
+
+        LocalDate targetDate = LocalDate.of(2026, 11, 4);
+        LocalDate otherDate = LocalDate.of(2026, 11, 3);
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                targetDate
+        );
+
+        Transaction dinner = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200"),
+                Category.FOOD,
+                "Dinner",
+                otherDate
+        );
+
+        Transaction transport = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150"),
+                Category.TRANSPORT,
+                "Taxi fare",
+                targetDate
+        );
+
+        service.addTransaction(groceries);
+        service.addTransaction(dinner);
+        service.addTransaction(transport);
+
+        List<Transaction> results =
+                service.getTransactionsByDate(targetDate);
+
+        assertEquals(2, results.size());
+        assertEquals(groceries, results.get(0));
+        assertEquals(transport, results.get(1));
+    }
+
+    @Test
+    void rejectsNullDateFilter() {
+        TransactionService service = new TransactionService();
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getTransactionsByDate(null)
+        );
+
+        assertEquals(
+                "Date cannot be null.",
+                error.getMessage()
+        );
+    }
+
+    @Test
+    void filtersTransactionsByMonth() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 4)
+        );
+
+        Transaction dinner = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200"),
+                Category.FOOD,
+                "Dinner",
+                LocalDate.of(2026, 11, 15)
+        );
+
+        Transaction transport = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150"),
+                Category.TRANSPORT,
+                "Taxi fare",
+                LocalDate.of(2026, 10, 30)
+        );
+
+        service.addTransaction(groceries);
+        service.addTransaction(dinner);
+        service.addTransaction(transport);
+
+        List<Transaction> results =
+                service.getTransactionsByMonth(YearMonth.of(2026, 11));
+
+        assertEquals(2, results.size());
+        assertEquals(groceries, results.get(0));
+        assertEquals(dinner, results.get(1));
+    }
+
+    @Test
+    void rejectsNullMonthFilter() {
+        TransactionService service = new TransactionService();
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getTransactionsByMonth(null)
+        );
+
+        assertEquals(
+                "Month cannot be null.",
+                error.getMessage()
         );
     }
 }
