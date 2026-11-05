@@ -645,4 +645,206 @@ class TransactionServiceTest {
                 () -> service.getMonthlyBalance(null)
         );
     }
+
+    @Test
+    void updatesExistingTransaction() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        service.addTransaction(groceries);
+
+        service.updateTransaction(
+                groceries,
+                new BigDecimal("80"),
+                Category.FOOD,
+                "Weekly groceries",
+                LocalDate.of(2026, 11, 6)
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("80").compareTo(groceries.getAmount())
+        );
+
+        assertEquals(Category.FOOD, groceries.getCategory());
+        assertEquals("Weekly groceries", groceries.getDescription());
+        assertEquals(LocalDate.of(2026, 11, 6), groceries.getDate());
+
+        assertEquals(1, service.getAllTransactions().size());
+    }
+
+    @Test
+    void rejectsUpdatingTransactionNotInService() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateTransaction(
+                        groceries,
+                        new BigDecimal("80"),
+                        Category.FOOD,
+                        "Weekly groceries",
+                        LocalDate.of(2026, 11, 6)
+                )
+        );
+
+        assertEquals(
+                "Transaction does not exist.",
+                error.getMessage()
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("800").compareTo(groceries.getAmount())
+        );
+    }
+
+    @Test
+    void invalidUpdateDoesNotChangeOriginalTransaction() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        service.addTransaction(groceries);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateTransaction(
+                        groceries,
+                        new BigDecimal("80"),
+                        Category.SALARY,
+                        "Weekly groceries",
+                        LocalDate.of(2026, 11, 6)
+                )
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("800").compareTo(groceries.getAmount())
+        );
+
+        assertEquals(Category.FOOD, groceries.getCategory());
+        assertEquals("Groceries", groceries.getDescription());
+        assertEquals(LocalDate.of(2026, 11, 5), groceries.getDate());
+    }
+
+    @Test
+    void rejectsUpdatingNullTransaction() {
+        TransactionService service = new TransactionService();
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.updateTransaction(
+                        null,
+                        new BigDecimal("80"),
+                        Category.FOOD,
+                        "Weekly groceries",
+                        LocalDate.of(2026, 11, 6)
+                )
+        );
+
+        assertEquals(
+                "Transaction cannot be null.",
+                error.getMessage()
+        );
+    }
+
+    @Test
+    void deletesExistingTransaction() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        Transaction dinner = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200"),
+                Category.FOOD,
+                "Dinner",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        service.addTransaction(groceries);
+        service.addTransaction(dinner);
+
+        service.deleteTransaction(groceries);
+
+        assertEquals(1, service.getAllTransactions().size());
+        assertEquals(dinner, service.getAllTransactions().get(0));
+
+        assertEquals(
+                0,
+                new BigDecimal("200").compareTo(
+                        service.getTotalExpenses()
+                )
+        );
+    }
+
+    @Test
+    void rejectsDeletingTransactionNotInService() {
+        TransactionService service = new TransactionService();
+
+        Transaction groceries = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.deleteTransaction(groceries)
+        );
+
+        assertEquals(
+                "Transaction does not exist.",
+                error.getMessage()
+        );
+
+        assertEquals(0, service.getAllTransactions().size());
+    }
+
+    @Test
+    void rejectsDeletingNullTransaction() {
+        TransactionService service = new TransactionService();
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> service.deleteTransaction(null)
+        );
+
+        assertEquals(
+                "Transaction cannot be null.",
+                error.getMessage()
+        );
+
+        assertEquals(0, service.getAllTransactions().size());
+    }
 }

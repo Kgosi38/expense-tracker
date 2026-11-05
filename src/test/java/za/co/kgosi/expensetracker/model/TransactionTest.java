@@ -120,4 +120,81 @@ class TransactionTest {
         assertEquals(Category.SALARY, transaction.getCategory());
         assertEquals("Monthly salary", transaction.getDescription());
     }
+
+    @Test
+    void rejectsInvalidTransactionIds() {
+        Transaction transaction = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> transaction.setId(null)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> transaction.setId(0L)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> transaction.setId(-1L)
+        );
+
+        assertEquals(null, transaction.getId());
+    }
+
+    @Test
+    void assignsTransactionIdOnlyOnce() {
+        Transaction transaction = new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        );
+
+        transaction.setId(1L);
+
+        assertEquals(1L, transaction.getId());
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> transaction.setId(2L)
+        );
+
+        assertEquals(1L, transaction.getId());
+    }
+
+    @Test
+    void rejectsInvalidIdInConstructor() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Transaction(
+                        -5L,
+                        TransactionType.EXPENSE,
+                        new BigDecimal("150"),
+                        Category.FOOD,
+                        "Groceries",
+                        LocalDate.of(2026, 11, 5)
+                )
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> new Transaction(
+                        0L,
+                        TransactionType.EXPENSE,
+                        new BigDecimal("150"),
+                        Category.FOOD,
+                        "Groceries",
+                        LocalDate.of(2026, 11, 5)
+                )
+        );
+    }
 }

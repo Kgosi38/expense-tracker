@@ -147,4 +147,55 @@ public class TransactionService {
 
         return income.subtract(expenses);
     }
+
+    public void updateTransaction(
+            Transaction transaction,
+            BigDecimal newAmount,
+            Category newCategory,
+            String newDescription,
+            LocalDate newDate) {
+
+        if (transaction == null) {
+            throw new IllegalArgumentException(
+                    "Transaction cannot be null."
+            );
+        }
+
+        if (!transactions.contains(transaction)) {
+            throw new IllegalArgumentException(
+                    "Transaction does not exist."
+            );
+        }
+
+        // Validate all new values before modifying the original.
+        Transaction validatedTransaction = new Transaction(
+                transaction.getType(),
+                newAmount,
+                newCategory,
+                newDescription,
+                newDate
+        );
+
+        // Apply changes only after all validation succeeds.
+        transaction.setAmount(validatedTransaction.getAmount());
+        transaction.setCategory(validatedTransaction.getCategory());
+        transaction.setDescription(validatedTransaction.getDescription());
+        transaction.setDate(validatedTransaction.getDate());
+    }
+
+    public void deleteTransaction(Transaction transaction) {
+        if (transaction == null) {
+            throw new IllegalArgumentException(
+                    "Transaction cannot be null."
+            );
+        }
+
+        boolean removed = transactions.remove(transaction);
+
+        if (!removed) {
+            throw new IllegalArgumentException(
+                    "Transaction does not exist."
+            );
+        }
+    }
 }

@@ -28,8 +28,13 @@ public class Transaction {
         if (type == null) {
             throw new IllegalArgumentException("Transaction type is required.");
         }
-        this.id = id;
+        this.id = null;
         this.type = type;
+
+        if (id != null) {
+            setId(id);
+        }
+
         setAmount(amount);
         setCategory(category);
         setDescription(description);
@@ -42,9 +47,18 @@ public class Transaction {
 
     // The database creates the id, so it may only be set once.
     public void setId(Long id) {
-        if (this.id != null) {
-            throw new IllegalStateException("The id has already been set.");
+        if (id == null || id <= 0) {
+            throw new IllegalArgumentException(
+                    "Transaction ID must be a positive number."
+            );
         }
+
+        if (this.id != null) {
+            throw new IllegalStateException(
+                    "The id has already been set."
+            );
+        }
+
         this.id = id;
     }
 
