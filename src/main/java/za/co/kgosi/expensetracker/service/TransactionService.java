@@ -110,4 +110,41 @@ public class TransactionService {
 
         return results;
     }
+
+    public BigDecimal getMonthlyIncome(YearMonth month) {
+        List<Transaction> monthlyTransactions =
+                getTransactionsByMonth(month);
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (Transaction transaction : monthlyTransactions) {
+            if (transaction.getType() == TransactionType.INCOME) {
+                total = total.add(transaction.getAmount());
+            }
+        }
+
+        return total;
+    }
+
+    public BigDecimal getMonthlyExpenses(YearMonth month) {
+        List<Transaction> monthlyTransactions =
+                getTransactionsByMonth(month);
+
+        BigDecimal total = BigDecimal.ZERO;
+
+        for (Transaction transaction : monthlyTransactions) {
+            if (transaction.getType() == TransactionType.EXPENSE) {
+                total = total.add(transaction.getAmount());
+            }
+        }
+
+        return total;
+    }
+
+    public BigDecimal getMonthlyBalance(YearMonth month) {
+        BigDecimal income = getMonthlyIncome(month);
+        BigDecimal expenses = getMonthlyExpenses(month);
+
+        return income.subtract(expenses);
+    }
 }

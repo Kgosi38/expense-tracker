@@ -11,6 +11,7 @@ import java.util.List;
 import java.time.YearMonth;
 
 
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -414,6 +415,234 @@ class TransactionServiceTest {
         assertEquals(
                 "Month cannot be null.",
                 error.getMessage()
+        );
+    }
+
+    @Test
+    void calculatesMonthlyIncome() {
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000"),
+                Category.SALARY,
+                "November salary",
+                LocalDate.of(2026, 11, 4)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("1500"),
+                Category.SALARY,
+                "November bonus",
+                LocalDate.of(2026, 11, 15)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 10)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("3000"),
+                Category.SALARY,
+                "October salary",
+                LocalDate.of(2026, 10, 20)
+        ));
+
+        BigDecimal result =
+                service.getMonthlyIncome(YearMonth.of(2026, 11));
+
+        assertEquals(
+                0,
+                new BigDecimal("6500").compareTo(result)
+        );
+    }
+
+    @Test
+    void calculatesMonthlyExpenses() {
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 4)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("1200"),
+                Category.CLOTHING,
+                "Clothing",
+                LocalDate.of(2026, 11, 12)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000"),
+                Category.SALARY,
+                "Salary",
+                LocalDate.of(2026, 11, 15)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("300"),
+                Category.FOOD,
+                "October groceries",
+                LocalDate.of(2026, 10, 20)
+        ));
+
+        BigDecimal result =
+                service.getMonthlyExpenses(YearMonth.of(2026, 11));
+
+        assertEquals(
+                0,
+                new BigDecimal("2000").compareTo(result)
+        );
+    }
+
+    @Test
+    void calculatesMonthlyBalance() {
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000"),
+                Category.SALARY,
+                "November salary",
+                LocalDate.of(2026, 11, 4)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("800"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 10)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("1200"),
+                Category.CLOTHING,
+                "Clothing",
+                LocalDate.of(2026, 11, 12)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("3000"),
+                Category.SALARY,
+                "October salary",
+                LocalDate.of(2026, 10, 20)
+        ));
+
+        BigDecimal result =
+                service.getMonthlyBalance(YearMonth.of(2026, 11));
+
+        assertEquals(
+                0,
+                new BigDecimal("3000").compareTo(result)
+        );
+    }
+
+    @Test
+    void calculatesNegativeMonthlyBalance() {
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("3000"),
+                Category.SALARY,
+                "November salary",
+                LocalDate.of(2026, 11, 4)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("2000"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 10)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("1500"),
+                Category.CLOTHING,
+                "Clothing",
+                LocalDate.of(2026, 11, 12)
+        ));
+
+        BigDecimal result =
+                service.getMonthlyBalance(YearMonth.of(2026, 11));
+
+        assertEquals(
+                0,
+                new BigDecimal("-500").compareTo(result)
+        );
+    }
+
+    @Test
+    void returnsZeroForMonthWithNoTransactions() {
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000"),
+                Category.SALARY,
+                "November salary",
+                LocalDate.of(2026, 11, 4)
+        ));
+
+        YearMonth emptyMonth = YearMonth.of(2026, 12);
+
+        assertEquals(
+                0,
+                BigDecimal.ZERO.compareTo(
+                        service.getMonthlyIncome(emptyMonth)
+                )
+        );
+
+        assertEquals(
+                0,
+                BigDecimal.ZERO.compareTo(
+                        service.getMonthlyExpenses(emptyMonth)
+                )
+        );
+
+        assertEquals(
+                0,
+                BigDecimal.ZERO.compareTo(
+                        service.getMonthlyBalance(emptyMonth)
+                )
+        );
+    }
+
+    @Test
+    void rejectsNullMonthForFinancialCalculations() {
+        TransactionService service = new TransactionService();
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getMonthlyIncome(null)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getMonthlyExpenses(null)
+        );
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> service.getMonthlyBalance(null)
         );
     }
 }
