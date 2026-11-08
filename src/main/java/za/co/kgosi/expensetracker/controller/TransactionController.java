@@ -1,0 +1,152 @@
+
+package za.co.kgosi.expensetracker.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.DeleteMapping;
+
+import za.co.kgosi.expensetracker.dto.UpdateTransactionRequest;
+
+import za.co.kgosi.expensetracker.model.Transaction;
+import za.co.kgosi.expensetracker.service.TransactionService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import za.co.kgosi.expensetracker.dto.CreateTransactionRequest;
+
+import java.util.List;
+import java.math.BigDecimal;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/transactions")
+public class TransactionController {
+
+    private final TransactionService transactionService;
+
+    public TransactionController(
+            TransactionService transactionService
+    ) {
+        this.transactionService = transactionService;
+    }
+
+
+    @GetMapping
+    public List<Transaction> getAllTransactions() {
+        return transactionService.getAllTransactions();
+    }
+    @GetMapping("/balance")
+        public Map<String, BigDecimal> getBalance() {
+            return Map.of(
+                    "income", transactionService.getTotalIncome(),
+                    "expenses", transactionService.getTotalExpenses(),
+                    "balance", transactionService.getBalance()
+            );
+        }
+
+        @PostMapping
+    public ResponseEntity<?> createTransaction(
+            @RequestBody CreateTransactionRequest request
+    ) {
+        try {
+            Transaction transaction = new Transaction(
+                    request.type(),
+                    request.amount(),
+                    request.category(),
+                    request.description(),
+                    request.date()
+            );
+
+            transactionService.addTransaction(transaction);
+
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(transaction);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateTransaction(
+            @PathVariable("id") Long id,
+            @RequestBody UpdateTransactionRequest request
+    ) {
+        try {
+            Transaction existingTransaction = transactionService
+                    .getAllTransactions()
+                    .stream()
+                    .filter(transaction -> id.equals(transaction.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingTransaction == null) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(Map.of(
+                                "error", "Transaction not found."
+                        ));
+            }
+
+            transactionService.updateTransaction(
+                    existingTransaction,
+                    request.amount(),
+                    request.category(),
+                    request.description(),
+                    request.date()
+            );
+
+            return ResponseEntity.ok(existingTransaction);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteTransaction(
+            @PathVariable("id") Long id
+    ) {
+        try {
+            Transaction existingTransaction = transactionService
+                    .getAllTransactions()
+                    .stream()
+                    .filter(transaction -> id.equals(transaction.getId()))
+                    .findFirst()
+                    .orElse(null);
+
+            if (existingTransaction == null) {
+                return ResponseEntity
+                        .status(HttpStatus.NOT_FOUND)
+                        .body(Map.of(
+                                "error", "Transaction not found."
+                        ));
+            }
+
+            transactionService.deleteTransaction(existingTransaction);
+
+            return ResponseEntity.noContent().build();
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity
+                    .badRequest()
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
+
+}
+
