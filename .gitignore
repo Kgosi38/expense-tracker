@@ -38,3 +38,9 @@ build/
 ### Mac OS ###
 .DS_Store
 .idea/
+
+# SQLite database files
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
