@@ -1,4 +1,5 @@
 # Java Expense Tracker
+![Java CI](https://github.com/Kgosi38/expense-tracker/actions/workflows/java-ci.yml/badge.svg)
 
 A Java-based expense management application built using **Java 26, Spring Boot 4, Maven and SQLite**.
 
