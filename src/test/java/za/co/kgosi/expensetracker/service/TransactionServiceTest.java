@@ -4,14 +4,21 @@ import org.junit.jupiter.api.Test;
 import za.co.kgosi.expensetracker.model.Category;
 import za.co.kgosi.expensetracker.model.Transaction;
 import za.co.kgosi.expensetracker.model.TransactionType;
+import za.co.kgosi.expensetracker.repository.TransactionRepository;
+import za.co.kgosi.expensetracker.database.DatabaseInitializer;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
 import java.time.YearMonth;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
-
-
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -846,5 +853,681 @@ class TransactionServiceTest {
         );
 
         assertEquals(0, service.getAllTransactions().size());
+    }
+
+    @Test
+    void acceptsRepositoryThroughConstructor() {
+
+        TransactionRepository repository =
+                new TransactionRepository("jdbc:sqlite::memory:");
+
+        TransactionService service =
+                new TransactionService(repository);
+
+        assertNotNull(service);
+    }
+
+    @Test
+    void rejectsNullRepositoryThroughConstructor() {
+
+        IllegalArgumentException error = assertThrows(
+                IllegalArgumentException.class,
+                () -> new TransactionService(null)
+        );
+
+        assertEquals(
+                "Repository cannot be null.",
+                error.getMessage()
+        );
+    }
+
+    @Test
+    void savesTransactionToDatabaseThroughService() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-service-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            // Create the SQLite table
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            // Create the repository
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            // Connect the service to the repository
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            // Create an expense
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Weekly groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            // Save through the service, not directly through the repository
+            databaseService.addTransaction(groceries);
+
+            // Read directly from SQLite to verify persistence
+            Transaction saved =
+                    repository.getTransactionById(groceries.getId());
+
+            assertNotNull(saved);
+            assertEquals(groceries.getId(), saved.getId());
+            assertEquals("Weekly groceries", saved.getDescription());
+            assertEquals(
+                    0,
+                    new BigDecimal("850.00")
+                            .compareTo(saved.getAmount())
+            );
+            assertEquals(Category.FOOD, saved.getCategory());
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void retrievesSavedTransactionsThroughNewServiceInstance() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-service-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            // Create the database table
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            // First service instance
+            TransactionService firstService =
+                    new TransactionService(repository);
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Weekly groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            // Save through the first service
+            firstService.addTransaction(groceries);
+
+            // Create a completely new service instance
+            TransactionService secondService =
+                    new TransactionService(
+                            new TransactionRepository(databaseUrl)
+                    );
+
+            // Retrieve the previously saved transaction
+            List<Transaction> transactions =
+                    secondService.getAllTransactions();
+
+            assertEquals(1, transactions.size());
+
+            Transaction retrieved = transactions.get(0);
+
+            assertEquals(groceries.getId(), retrieved.getId());
+            assertEquals("Weekly groceries", retrieved.getDescription());
+            assertEquals(Category.FOOD, retrieved.getCategory());
+            assertEquals(
+                    0,
+                    new BigDecimal("850.00")
+                            .compareTo(retrieved.getAmount())
+            );
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void calculatesBalanceUsingSQLiteTransactions() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-balance-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            Transaction salary = new Transaction(
+                    TransactionType.INCOME,
+                    new BigDecimal("5000.00"),
+                    Category.SALARY,
+                    "Monthly salary",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            databaseService.addTransaction(salary);
+            databaseService.addTransaction(groceries);
+
+            assertEquals(
+                    0,
+                    new BigDecimal("5000.00")
+                            .compareTo(databaseService.getTotalIncome())
+            );
+
+            assertEquals(
+                    0,
+                    new BigDecimal("850.00")
+                            .compareTo(databaseService.getTotalExpenses())
+            );
+
+            assertEquals(
+                    0,
+                    new BigDecimal("4150.00")
+                            .compareTo(databaseService.getBalance())
+            );
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void filtersSQLiteTransactionsByCategory() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-category-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            Transaction transport = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("200.00"),
+                    Category.TRANSPORT,
+                    "Taxi fare",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            Transaction lunch = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("120.00"),
+                    Category.FOOD,
+                    "Lunch",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            databaseService.addTransaction(groceries);
+            databaseService.addTransaction(transport);
+            databaseService.addTransaction(lunch);
+
+            List<Transaction> foodTransactions =
+                    databaseService.getTransactionsByCategory(Category.FOOD);
+
+            assertEquals(2, foodTransactions.size());
+
+            assertTrue(foodTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("Groceries")));
+
+            assertTrue(foodTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("Lunch")));
+
+            assertFalse(foodTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("Taxi fare")));
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void filtersSQLiteTransactionsByDate() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-date-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            Transaction transport = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("200.00"),
+                    Category.TRANSPORT,
+                    "Taxi fare",
+                    LocalDate.of(2026, 11, 7)
+            );
+
+            Transaction lunch = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("120.00"),
+                    Category.FOOD,
+                    "Lunch",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            databaseService.addTransaction(groceries);
+            databaseService.addTransaction(transport);
+            databaseService.addTransaction(lunch);
+
+            List<Transaction> results =
+                    databaseService.getTransactionsByDate(
+                            LocalDate.of(2026, 11, 8)
+                    );
+
+            assertEquals(2, results.size());
+
+            assertTrue(results.stream()
+                    .anyMatch(t -> t.getDescription().equals("Groceries")));
+
+            assertTrue(results.stream()
+                    .anyMatch(t -> t.getDescription().equals("Lunch")));
+
+            assertFalse(results.stream()
+                    .anyMatch(t -> t.getDescription().equals("Taxi fare")));
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void filtersSQLiteTransactionsByMonth() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-month-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            Transaction transport = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("200.00"),
+                    Category.TRANSPORT,
+                    "Taxi fare",
+                    LocalDate.of(2026, 11, 15)
+            );
+
+            Transaction octoberExpense = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("500.00"),
+                    Category.FOOD,
+                    "October groceries",
+                    LocalDate.of(2026, 10, 30)
+            );
+
+            databaseService.addTransaction(groceries);
+            databaseService.addTransaction(transport);
+            databaseService.addTransaction(octoberExpense);
+
+            List<Transaction> novemberTransactions =
+                    databaseService.getTransactionsByMonth(
+                            YearMonth.of(2026, 11)
+                    );
+
+            assertEquals(2, novemberTransactions.size());
+
+            assertTrue(novemberTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("Groceries")));
+
+            assertTrue(novemberTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("Taxi fare")));
+
+            assertFalse(novemberTransactions.stream()
+                    .anyMatch(t -> t.getDescription().equals("October groceries")));
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void calculatesMonthlyFinancialReportUsingSQLite() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-report-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(
+                            new TransactionRepository(databaseUrl)
+                    );
+
+            databaseService.addTransaction(new Transaction(
+                    TransactionType.INCOME,
+                    new BigDecimal("8000.00"),
+                    Category.SALARY,
+                    "November salary",
+                    LocalDate.of(2026, 11, 1)
+            ));
+
+            databaseService.addTransaction(new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "November groceries",
+                    LocalDate.of(2026, 11, 8)
+            ));
+
+            databaseService.addTransaction(new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("200.00"),
+                    Category.TRANSPORT,
+                    "November transport",
+                    LocalDate.of(2026, 11, 15)
+            ));
+
+            databaseService.addTransaction(new Transaction(
+                    TransactionType.INCOME,
+                    new BigDecimal("3000.00"),
+                    Category.SALARY,
+                    "October salary",
+                    LocalDate.of(2026, 10, 1)
+            ));
+
+            YearMonth november = YearMonth.of(2026, 11);
+
+            assertEquals(
+                    0,
+                    new BigDecimal("8000.00")
+                            .compareTo(databaseService.getMonthlyIncome(november))
+            );
+
+            assertEquals(
+                    0,
+                    new BigDecimal("1050.00")
+                            .compareTo(databaseService.getMonthlyExpenses(november))
+            );
+
+            assertEquals(
+                    0,
+                    new BigDecimal("6950.00")
+                            .compareTo(databaseService.getMonthlyBalance(november))
+            );
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void updatesSQLiteTransactionThroughService() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-update-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            // Create and save the original transaction
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            databaseService.addTransaction(groceries);
+
+            Long transactionId = groceries.getId();
+
+            // Update the transaction through the service
+            databaseService.updateTransaction(
+                    groceries,
+                    new BigDecimal("950.00"),
+                    Category.FOOD,
+                    "Updated groceries",
+                    LocalDate.of(2026, 11, 9)
+            );
+
+            // Read directly from SQLite
+            Transaction updated =
+                    repository.getTransactionById(transactionId);
+
+            assertNotNull(updated);
+
+            assertEquals(
+                    0,
+                    new BigDecimal("950.00")
+                            .compareTo(updated.getAmount())
+            );
+
+            assertEquals("Updated groceries", updated.getDescription());
+            assertEquals(LocalDate.of(2026, 11, 9), updated.getDate());
+            assertEquals(transactionId, updated.getId());
+
+            // Confirm that the service also returns the updated record
+            TransactionService newService =
+                    new TransactionService(
+                            new TransactionRepository(databaseUrl)
+                    );
+
+            List<Transaction> savedTransactions =
+                    newService.getAllTransactions();
+
+            assertEquals(1, savedTransactions.size());
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void rejectsInvalidSQLiteUpdateWithoutChangingSavedTransaction()
+            throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-invalid-update-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            databaseService.addTransaction(groceries);
+
+            Long transactionId = groceries.getId();
+
+            // Attempt an invalid update
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> databaseService.updateTransaction(
+                            groceries,
+                            new BigDecimal("-950.00"),
+                            Category.FOOD,
+                            "Invalid groceries",
+                            LocalDate.of(2026, 11, 9)
+                    )
+            );
+
+            // Retrieve the transaction from SQLite
+            Transaction saved =
+                    repository.getTransactionById(transactionId);
+
+            assertNotNull(saved);
+
+            // Original values must remain unchanged
+            assertEquals(
+                    0,
+                    new BigDecimal("850.00")
+                            .compareTo(saved.getAmount())
+            );
+
+            assertEquals("Groceries", saved.getDescription());
+
+            assertEquals(
+                    LocalDate.of(2026, 11, 8),
+                    saved.getDate()
+            );
+
+            // The original Java object must also remain unchanged
+            assertEquals(
+                    0,
+                    new BigDecimal("850.00")
+                            .compareTo(groceries.getAmount())
+            );
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
+    }
+
+    @Test
+    void deletesSQLiteTransactionThroughService() throws Exception {
+
+        Path databaseFile = Files.createTempFile(
+                "expense-tracker-delete-test-", ".db"
+        );
+
+        String databaseUrl = "jdbc:sqlite:" + databaseFile;
+
+        try {
+            // Create the database table
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+
+            TransactionRepository repository =
+                    new TransactionRepository(databaseUrl);
+
+            TransactionService databaseService =
+                    new TransactionService(repository);
+
+            // Create a transaction
+            Transaction groceries = new Transaction(
+                    TransactionType.EXPENSE,
+                    new BigDecimal("850.00"),
+                    Category.FOOD,
+                    "Groceries",
+                    LocalDate.of(2026, 11, 8)
+            );
+
+            // Save the transaction to SQLite
+            databaseService.addTransaction(groceries);
+
+            Long transactionId = groceries.getId();
+
+            // Verify it exists before deletion
+            assertNotNull(
+                    repository.getTransactionById(transactionId)
+            );
+
+            // Delete through the service
+            databaseService.deleteTransaction(groceries);
+
+            // Verify the transaction is gone from SQLite
+            assertNull(
+                    repository.getTransactionById(transactionId)
+            );
+
+            // Verify a new service instance also sees no transactions
+            TransactionService newService =
+                    new TransactionService(
+                            new TransactionRepository(databaseUrl)
+                    );
+
+            assertEquals(0, newService.getAllTransactions().size());
+
+        } finally {
+            Files.deleteIfExists(databaseFile);
+        }
     }
 }
