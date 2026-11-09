@@ -20,8 +20,26 @@
 
 <main>
 
-    <!-- Financial summary -->
+    <!-- Public Demo Notice -->
+    <section id="demo-banner" class="demo-banner" hidden>
+        <h2>Read-Only Demo</h2>
+        <p>
+            Welcome to the Expense Tracker demonstration.
+            This dashboard uses fictional financial data.
+
+            You can view transactions, search, filter,
+            sort, and explore monthly financial reports
+            and spending analytics.
+
+            Adding, editing, and deleting transactions
+            are disabled in demo mode.
+        </p>
+    </section>
+
+
+    <!-- Financial Summary -->
     <section class="summary">
+
         <div class="card">
             <h2>Total Income</h2>
             <p id="total-income">R 0.00</p>
@@ -36,6 +54,7 @@
             <h2>Current Balance</h2>
             <p id="current-balance">R 0.00</p>
         </div>
+
     </section>
 
 
@@ -44,17 +63,25 @@
 
         <h2>Monthly Financial Report</h2>
 
-        <p>View your income, expenses and balance for a selected month.</p>
+        <p>
+            View your income, expenses and balance
+            for a selected month.
+        </p>
 
         <div class="month-selector">
-            <label for="report-month">Select Month</label>
+
+            <label for="report-month">
+                Select Month
+            </label>
 
             <input
                     type="month"
                     id="report-month"
                     required
             >
+
         </div>
+
 
         <div class="report-summary">
 
@@ -78,36 +105,56 @@
     </section>
 
 
+    <!-- Spending Analytics -->
     <section class="analytics-section">
+
         <h2>Spending Analytics</h2>
-        <p>See where your money goes each month.</p>
+
+        <p>
+            See where your money goes each month.
+        </p>
 
         <div class="analytics-controls">
-            <label for="analyticsMonth">Select Month</label>
-            <input type="month" id="analyticsMonth">
+
+            <label for="analyticsMonth">
+                Select Month
+            </label>
+
+            <input
+                    type="month"
+                    id="analyticsMonth"
+            >
+
         </div>
 
         <div id="spendingChart">
-            <p>Select a month to view your spending.</p>
+            <p>
+                Select a month to view your spending.
+            </p>
         </div>
+
     </section>
 
 
-
-    <!-- Add transaction form -->
+    <!-- Add Transaction Form -->
     <section class="transaction-form">
+
         <h2>Add Transaction</h2>
 
         <form id="add-transaction-form">
 
             <label for="type">Type</label>
+
             <select id="type" required>
                 <option value="Income">Income</option>
                 <option value="Expense">Expense</option>
             </select>
 
 
-            <label for="amount">Amount (R)</label>
+            <label for="amount">
+                Amount (R)
+            </label>
+
             <input
                     type="number"
                     id="amount"
@@ -118,35 +165,56 @@
             >
 
 
+            <label for="category">
+                Category
+            </label>
 
-            <label for="category">Category</label>
             <select id="category" required>
-                <!-- JavaScript will populate the categories -->
+                <!-- Populated by JavaScript -->
             </select>
 
-            <label for="description">Description</label>
-            <input type="text"
-                   id="description"
-                   maxlength="100"
-                   required>
 
-            <label for="date">Date</label>
-            <input type="date" id="date" required>
+            <label for="description">
+                Description
+            </label>
+
+            <input
+                    type="text"
+                    id="description"
+                    maxlength="100"
+                    required
+            >
+
+
+            <label for="date">
+                Date
+            </label>
+
+            <input
+                    type="date"
+                    id="date"
+                    required
+            >
+
 
             <button type="submit">
                 Add Transaction
             </button>
 
         </form>
+
     </section>
 
-    <!-- Transactions table -->
+
+    <!-- Transaction History -->
     <section class="transactions">
+
         <h2>Transaction History</h2>
 
 
-        <!-- Transaction Search -->
+        <!-- Search -->
         <div class="search-container">
+
             <label for="transaction-search">
                 Search Transactions
             </label>
@@ -157,71 +225,110 @@
                     placeholder="Search by description..."
                     autocomplete="off"
             >
+
         </div>
 
 
-        <!-- Transaction Category Filter -->
+        <!-- Category Filter -->
         <div class="filter-container">
+
             <label for="category-filter">
                 Filter by Category
             </label>
 
             <select id="category-filter">
-                <option value="All">All Categories</option>
+                <option value="All">
+                    All Categories
+                </option>
             </select>
+
         </div>
 
 
-        <!-- Transaction Sorting -->
+        <!-- Sorting -->
         <div class="filter-container">
+
             <label for="transaction-sort">
                 Sort Transactions
             </label>
 
             <select id="transaction-sort">
-                <option value="default">Default Order</option>
-                <option value="date-newest">Date: Newest First</option>
-                <option value="date-oldest">Date: Oldest First</option>
-                <option value="amount-high">Amount: Highest First</option>
-                <option value="amount-low">Amount: Lowest First</option>
+
+                <option value="default">
+                    Default Order
+                </option>
+
+                <option value="date-newest">
+                    Date: Newest First
+                </option>
+
+                <option value="date-oldest">
+                    Date: Oldest First
+                </option>
+
+                <option value="amount-high">
+                    Amount: Highest First
+                </option>
+
+                <option value="amount-low">
+                    Amount: Lowest First
+                </option>
+
             </select>
+
         </div>
 
 
-
-
-        <!-- Transaction Type Filter -->
+        <!-- Type Filter -->
         <div class="filter-container">
+
             <label for="transaction-filter">
                 Filter by Type
             </label>
 
             <select id="transaction-filter">
-                <option value="All">All Transactions</option>
-                <option value="Income">Income Only</option>
-                <option value="Expense">Expenses Only</option>
+
+                <option value="All">
+                    All Transactions
+                </option>
+
+                <option value="Income">
+                    Income Only
+                </option>
+
+                <option value="Expense">
+                    Expenses Only
+                </option>
+
             </select>
+
         </div>
 
 
+        <!-- Transaction Table -->
         <div class="table-container">
-        <table>
-            <thead>
-            <tr>
-                <th>Date</th>
-                <th>Type</th>
-                <th>Category</th>
-                <th>Description</th>
-                <th>Amount</th>
-                <th>Actions</th>
-            </tr>
-            </thead>
 
-            <tbody id="transaction-list">
-            <!-- JavaScript will add transactions here -->
-            </tbody>
-        </table>
+            <table>
+
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                </tr>
+                </thead>
+
+                <tbody id="transaction-list">
+                <!-- Populated by JavaScript -->
+                </tbody>
+
+            </table>
+
         </div>
+
     </section>
 
 
@@ -234,9 +341,16 @@
 
             <form id="edit-transaction-form">
 
-                <input type="hidden" id="edit-id">
+                <input
+                        type="hidden"
+                        id="edit-id"
+                >
 
-                <label for="edit-amount">Amount (R)</label>
+
+                <label for="edit-amount">
+                    Amount (R)
+                </label>
+
                 <input
                         type="number"
                         id="edit-amount"
@@ -245,11 +359,22 @@
                         required
                 >
 
-                <label for="edit-category">Category</label>
-                <select id="edit-category" required>
+
+                <label for="edit-category">
+                    Category
+                </label>
+
+                <select
+                        id="edit-category"
+                        required
+                >
                 </select>
 
-                <label for="edit-description">Description</label>
+
+                <label for="edit-description">
+                    Description
+                </label>
+
                 <input
                         type="text"
                         id="edit-description"
@@ -257,18 +382,26 @@
                         required
                 >
 
-                <label for="edit-date">Date</label>
+
+                <label for="edit-date">
+                    Date
+                </label>
+
                 <input
                         type="date"
                         id="edit-date"
                         required
                 >
 
+
                 <button type="submit">
                     Save Changes
                 </button>
 
-                <button type="button" id="cancel-edit">
+                <button
+                        type="button"
+                        id="cancel-edit"
+                >
                     Cancel
                 </button>
 
@@ -277,7 +410,6 @@
         </div>
 
     </div>
-
 
 </main>
 

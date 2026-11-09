@@ -491,4 +491,7 @@ td {
     border-radius: 8px;
     transition: width 0.3s ease;
 }
-
+/* Ensure hidden elements stay hidden */
+[hidden] {
+    display: none !important;
+}

@@ -66,14 +66,24 @@
 
     </dependencies>
 
+
     <build>
         <plugins>
+            <!-- Maven Surefire: Runs automated tests -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.5.4</version>
             </plugin>
+
+            <!-- Spring Boot: Runs and packages the application -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>4.1.2</version>
+            </plugin>
         </plugins>
     </build>
+
 
 </project>

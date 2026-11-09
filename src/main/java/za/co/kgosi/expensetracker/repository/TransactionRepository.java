@@ -4,6 +4,7 @@ import za.co.kgosi.expensetracker.database.DatabaseConnection;
 import za.co.kgosi.expensetracker.model.Transaction;
 import za.co.kgosi.expensetracker.model.Category;
 import za.co.kgosi.expensetracker.model.TransactionType;
+import za.co.kgosi.expensetracker.database.DatabaseInitializer;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,9 +20,19 @@ public class TransactionRepository {
 
     private final String databaseUrl;
 
+
     public TransactionRepository(String databaseUrl) {
         this.databaseUrl = databaseUrl;
+
+        try {
+            DatabaseInitializer.initializeDatabase(databaseUrl);
+        } catch (SQLException e) {
+            throw new IllegalStateException(
+                    "Failed to initialize the database.", e
+            );
+        }
     }
+
 
     public Connection getConnection() throws SQLException {
         return DatabaseConnection.getConnection(databaseUrl);

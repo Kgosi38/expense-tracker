@@ -2,8 +2,44 @@
 const API_URL = "/api/transactions";
 
 let allTransactions = [];
+let isDemoMode = true;
+
+// Check whether Spring Boot is running in demo mode
+async function checkDemoMode() {
+    try {
+        const response = await fetch("/api/demo-mode");
+
+        if (!response.ok) {
+            throw new Error("Unable to check demo mode.");
+        }
+
+        const data = await response.json();
+
+        isDemoMode = data.demoMode === true;
+
+    } catch (error) {
+        console.error("Demo mode detection failed:", error);
+
+        // Keep editing disabled if the mode is unknown
+        isDemoMode = true;
+    }
+
+    // Update the interface
+    document.getElementById("demo-banner").hidden = !isDemoMode;
+
+    document.querySelector(".transaction-form").hidden = isDemoMode;
+
+    document.querySelector(
+        ".transactions thead th:last-child"
+    ).hidden = isDemoMode;
+
+    document.getElementById("edit-modal").hidden = true;
+
+    console.log("Demo mode:", isDemoMode);
+}
 
 
+// Transaction categories
 const categories = {
     Income: [
         "Salary",
@@ -11,6 +47,7 @@ const categories = {
         "Bursary",
         "Other income"
     ],
+
     Expense: [
         "Food",
         "Transport",
@@ -25,6 +62,8 @@ const categories = {
     ]
 };
 
+
+// Update categories based on transaction type
 function updateCategories() {
     const type = document.getElementById("type").value;
     const categorySelect = document.getElementById("category");
@@ -47,6 +86,7 @@ function formatCurrency(amount) {
         currency: "ZAR"
     }).format(amount);
 }
+
 
 // Load financial summary
 async function loadBalance() {
@@ -73,13 +113,10 @@ async function loadBalance() {
     }
 }
 
+
 // Load transaction history
-
-
-
 async function loadTransactions() {
     try {
-        // Fetch transactions from the Java backend
         const response = await fetch(API_URL);
 
         if (!response.ok) {
@@ -88,56 +125,52 @@ async function loadTransactions() {
 
         const transactions = await response.json();
 
-        // Store the latest transactions
         allTransactions = transactions;
 
+        // Sort transactions
+        const sortOption =
+            document.getElementById("transaction-sort").value;
 
-const sortOption =
-    document.getElementById("transaction-sort").value;
+        switch (sortOption) {
+            case "date-newest":
+                transactions.sort((a, b) =>
+                    b.date.localeCompare(a.date) || b.id - a.id
+                );
+                break;
 
-switch (sortOption) {
-    case "date-newest":
-        transactions.sort((a, b) =>
-            b.date.localeCompare(a.date) || b.id - a.id
-        );
-        break;
+            case "date-oldest":
+                transactions.sort((a, b) =>
+                    a.date.localeCompare(b.date) || a.id - b.id
+                );
+                break;
 
-    case "date-oldest":
-        transactions.sort((a, b) =>
-            a.date.localeCompare(b.date) || a.id - b.id
-        );
-        break;
+            case "amount-high":
+                transactions.sort((a, b) =>
+                    b.amount - a.amount
+                );
+                break;
 
-    case "amount-high":
-        transactions.sort((a, b) =>
-            b.amount - a.amount
-        );
-        break;
+            case "amount-low":
+                transactions.sort((a, b) =>
+                    a.amount - b.amount
+                );
+                break;
 
-    case "amount-low":
-        transactions.sort((a, b) =>
-            a.amount - b.amount
-        );
-        break;
-
-    default:
-        // Keep the original order returned by the API
-        break;
-}
-
+            default:
+                break;
+        }
 
         const tableBody =
             document.getElementById("transaction-list");
 
-        // Clear existing rows
         tableBody.replaceChildren();
 
-        // Display a message if no transactions exist
+        // Display a message if there are no transactions
         if (transactions.length === 0) {
             const row = document.createElement("tr");
             const cell = document.createElement("td");
 
-            cell.colSpan = 6;
+            cell.colSpan = isDemoMode ? 5 : 6;
             cell.textContent = "No transactions yet.";
 
             row.appendChild(cell);
@@ -147,17 +180,13 @@ switch (sortOption) {
 
         // Display each transaction
         transactions.forEach(transaction => {
-
             const row = document.createElement("tr");
 
-            // Store searchable information
             row.dataset.description =
                 (transaction.description || "").toLowerCase();
 
             row.dataset.type = transaction.type;
-
             row.dataset.category = transaction.category;
-
 
             // Transaction information
             const values = [
@@ -174,39 +203,39 @@ switch (sortOption) {
                 row.appendChild(cell);
             });
 
-            // Actions column
-            const actionsCell = document.createElement("td");
+            // Editing controls are available only in normal mode
+            if (!isDemoMode) {
+                const actionsCell = document.createElement("td");
 
-            // Edit button
-            const editButton = document.createElement("button");
-            editButton.textContent = "Edit";
-            editButton.className = "edit-btn";
+                // Edit button
+                const editButton = document.createElement("button");
+                editButton.textContent = "Edit";
+                editButton.className = "edit-btn";
 
-            editButton.addEventListener("click", () => {
-                editTransaction(transaction);
-            });
+                editButton.addEventListener("click", () => {
+                    editTransaction(transaction);
+                });
 
-            actionsCell.appendChild(editButton);
+                actionsCell.appendChild(editButton);
 
-            // Delete button
-            const deleteButton = document.createElement("button");
-            deleteButton.textContent = "Delete";
-            deleteButton.className = "delete-btn";
+                // Delete button
+                const deleteButton = document.createElement("button");
+                deleteButton.textContent = "Delete";
+                deleteButton.className = "delete-btn";
 
-            deleteButton.addEventListener("click", () => {
-                deleteTransaction(transaction.id);
-            });
+                deleteButton.addEventListener("click", () => {
+                    deleteTransaction(transaction.id);
+                });
 
-            actionsCell.appendChild(deleteButton);
+                actionsCell.appendChild(deleteButton);
 
-            // Add actions to row
-            row.appendChild(actionsCell);
+                row.appendChild(actionsCell);
+            }
 
-            // Add completed row to table
             tableBody.appendChild(row);
         });
 
-        // Apply search and type filters
+        // Apply search and filters
         searchTransactions();
 
     } catch (error) {
@@ -215,10 +244,7 @@ switch (sortOption) {
 }
 
 
-
-
-
-
+// Search and filter transactions
 function searchTransactions() {
     const searchText = document
         .getElementById("transaction-search")
@@ -246,8 +272,10 @@ function searchTransactions() {
         const category = row.dataset.category || "";
 
         const matchesSearch = description.includes(searchText);
+
         const matchesType =
             selectedType === "All" || type === selectedType;
+
         const matchesCategory =
             selectedCategory === "All" || category === selectedCategory;
 
@@ -274,18 +302,20 @@ function searchTransactions() {
         row.dataset.emptyMessage = "true";
 
         const cell = document.createElement("td");
-        cell.colSpan = 6;
-        cell.textContent = "No matching transactions found. Try another search or filter.";
-        cell.className = "empty-results";
+        cell.colSpan = isDemoMode ? 5 : 6;
 
+        cell.textContent =
+            "No matching transactions found. Try another search or filter.";
+
+        cell.className = "empty-results";
 
         row.appendChild(cell);
         tableBody.appendChild(row);
     }
 }
 
-// Load dashboard data
 
+// Load dashboard data
 async function loadDashboard() {
     await Promise.all([
         loadBalance(),
@@ -295,10 +325,14 @@ async function loadDashboard() {
 }
 
 
-
-
+// Add a transaction
 async function addTransaction(event) {
     event.preventDefault();
+
+    if (isDemoMode) {
+        alert("This is a read-only demo.");
+        return;
+    }
 
     const transaction = {
         type: document.getElementById("type").value,
@@ -323,6 +357,8 @@ async function addTransaction(event) {
             if (response.status === 400) {
                 errorMessage =
                     "Invalid transaction details. Check your amount, category and date.";
+            } else if (response.status === 403) {
+                errorMessage = "This is a read-only demo.";
             } else if (response.status >= 500) {
                 errorMessage =
                     "A server error occurred. Please try again later.";
@@ -333,16 +369,10 @@ async function addTransaction(event) {
 
         alert("Transaction added successfully!");
 
-        // Clear the transaction form
         document.getElementById("add-transaction-form").reset();
-
-        // Refresh categories to match the reset transaction type
         updateCategories();
 
-        // Refresh the dashboard
         await loadDashboard();
-
-        // Refresh the Spending Analytics chart
         await loadSpendingAnalytics();
 
     } catch (error) {
@@ -351,27 +381,25 @@ async function addTransaction(event) {
     }
 }
 
+
+// Populate the category filter
 function populateCategoryFilter() {
     const categoryFilter =
         document.getElementById("category-filter");
 
-    // Clear existing options
     categoryFilter.replaceChildren();
 
-    // Add the default option
     const allOption = document.createElement("option");
     allOption.value = "All";
     allOption.textContent = "All Categories";
 
     categoryFilter.appendChild(allOption);
 
-    // Get all income and expense categories
     const allCategories = [
         ...categories.Income,
         ...categories.Expense
     ];
 
-    // Add each category to the dropdown
     allCategories.forEach(category => {
         const option = document.createElement("option");
 
@@ -383,8 +411,12 @@ function populateCategoryFilter() {
 }
 
 
-
+// Delete a transaction
 async function deleteTransaction(id) {
+    if (isDemoMode) {
+        alert("Deleting transactions is disabled in demo mode.");
+        return;
+    }
 
     const confirmed = confirm(
         "Are you sure you want to delete this transaction?"
@@ -405,10 +437,7 @@ async function deleteTransaction(id) {
 
         alert("Transaction deleted successfully!");
 
-        // Refresh the dashboard and transaction history
         await loadDashboard();
-
-        // Refresh Spending Analytics
         await loadSpendingAnalytics();
 
     } catch (error) {
@@ -418,28 +447,24 @@ async function deleteTransaction(id) {
 }
 
 
-
+// Open the edit transaction modal
 function editTransaction(transaction) {
+    if (isDemoMode) {
+        return;
+    }
 
-
-
-    // Store the transaction ID
     document.getElementById("edit-id").value =
         transaction.id;
 
-    // Fill in the existing amount
     document.getElementById("edit-amount").value =
         transaction.amount;
 
-    // Fill in the existing description
     document.getElementById("edit-description").value =
         transaction.description;
 
-    // Fill in the existing date
     document.getElementById("edit-date").value =
         transaction.date;
 
-    // Populate categories based on transaction type
     const categorySelect =
         document.getElementById("edit-category");
 
@@ -452,16 +477,20 @@ function editTransaction(transaction) {
         categorySelect.appendChild(option);
     });
 
-    // Select the transaction's current category
     categorySelect.value = transaction.category;
 
-    // Display the editing modal
     document.getElementById("edit-modal").hidden = false;
 }
 
 
+// Save edited transaction
 async function saveEditedTransaction(event) {
     event.preventDefault();
+
+    if (isDemoMode) {
+        alert("Editing transactions is disabled in demo mode.");
+        return;
+    }
 
     const id = document.getElementById("edit-id").value;
 
@@ -487,13 +516,9 @@ async function saveEditedTransaction(event) {
             throw new Error("Failed to update transaction");
         }
 
-        // Close the editing modal
         document.getElementById("edit-modal").hidden = true;
 
-        // Refresh the dashboard and transaction history
         await loadDashboard();
-
-        // Refresh Spending Analytics
         await loadSpendingAnalytics();
 
         alert("Transaction updated successfully!");
@@ -505,7 +530,7 @@ async function saveEditedTransaction(event) {
 }
 
 
-
+// Load monthly financial report
 async function loadMonthlyReport() {
     const month = document.getElementById("report-month").value;
 
@@ -539,10 +564,13 @@ async function loadMonthlyReport() {
 }
 
 
+// Close edit modal
 function closeEditModal() {
     document.getElementById("edit-modal").hidden = true;
 }
 
+
+// Load spending analytics
 async function loadSpendingAnalytics() {
     const monthInput = document.getElementById("analyticsMonth");
     const chart = document.getElementById("spendingChart");
@@ -566,73 +594,84 @@ async function loadSpendingAnalytics() {
         }
 
         const data = await response.json();
+        const spendingCategories = data.categories;
 
+        chart.replaceChildren();
 
-const categories = data.categories;
+        const entries = Object.entries(spendingCategories);
 
-chart.innerHTML = "";
+        if (entries.length === 0) {
+            chart.textContent = "No expenses found for this month.";
+            return;
+        }
 
-const entries = Object.entries(categories);
+        const highestAmount = Math.max(
+            ...entries.map(([, amount]) => Number(amount))
+        );
 
-if (entries.length === 0) {
-    chart.textContent = "No expenses found for this month.";
-    return;
-}
+        entries.sort((a, b) => Number(b[1]) - Number(a[1]));
 
-const highestAmount = Math.max(
-    ...entries.map(([category, amount]) => Number(amount))
-);
+        entries.forEach(([category, amount]) => {
+            const percentage =
+                highestAmount > 0
+                    ? (Number(amount) / highestAmount) * 100
+                    : 0;
 
-entries.sort((a, b) => Number(b[1]) - Number(a[1]));
+            const container = document.createElement("div");
+            container.className = "spending-bar-container";
 
-entries.forEach(([category, amount]) => {
-    const percentage = (Number(amount) / highestAmount) * 100;
+            const label = document.createElement("div");
+            label.className = "spending-bar-label";
 
-    const container = document.createElement("div");
-    container.className = "spending-bar-container";
+            const categoryName = document.createElement("span");
+            categoryName.textContent = category;
 
-    const label = document.createElement("div");
-    label.className = "spending-bar-label";
+            const categoryAmount = document.createElement("span");
+            categoryAmount.textContent = formatCurrency(amount);
 
-    const categoryName = document.createElement("span");
-    categoryName.textContent = category;
+            label.appendChild(categoryName);
+            label.appendChild(categoryAmount);
 
-    const categoryAmount = document.createElement("span");
-    categoryAmount.textContent = `R${Number(amount).toFixed(2)}`;
+            const track = document.createElement("div");
+            track.className = "spending-bar-track";
 
-    label.appendChild(categoryName);
-    label.appendChild(categoryAmount);
+            const fill = document.createElement("div");
+            fill.className = "spending-bar-fill";
+            fill.style.width = `${percentage}%`;
 
-    const track = document.createElement("div");
-    track.className = "spending-bar-track";
+            track.appendChild(fill);
 
-    const fill = document.createElement("div");
-    fill.className = "spending-bar-fill";
-    fill.style.width = `${percentage}%`;
+            container.appendChild(label);
+            container.appendChild(track);
 
-    track.appendChild(fill);
-
-    container.appendChild(label);
-    container.appendChild(track);
-
-    chart.appendChild(container);
-});
-
+            chart.appendChild(container);
+        });
 
     } catch (error) {
-        console.error(error);
+        console.error("Analytics error:", error);
         chart.textContent = "Unable to load spending analytics.";
     }
 }
 
-document.getElementById("analyticsMonth")
-    .addEventListener("change", loadSpendingAnalytics);
 
-document.addEventListener("DOMContentLoaded", () => {
-    loadDashboard();
+// Initialize dashboard after the page loads
+document.addEventListener("DOMContentLoaded", async () => {
+
+    // Check mode before rendering transactions
+    await checkDemoMode();
+
     updateCategories();
     populateCategoryFilter();
 
+    const today = new Date();
+
+    const currentMonth =
+        `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+
+    document.getElementById("report-month").value = currentMonth;
+    document.getElementById("analyticsMonth").value = currentMonth;
+
+    // Register event listeners
     document.getElementById("type")
         .addEventListener("change", updateCategories);
 
@@ -657,20 +696,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("transaction-sort")
         .addEventListener("change", loadTransactions);
 
+    document.getElementById("report-month")
+        .addEventListener("change", loadMonthlyReport);
 
-const reportMonth = document.getElementById("report-month");
+    document.getElementById("analyticsMonth")
+        .addEventListener("change", loadSpendingAnalytics);
 
-reportMonth.value = new Date().toLocaleDateString("en-CA").slice(0, 7);
-
-
-const today = new Date();
-reportMonth.value =
-    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-
-
-loadMonthlyReport();
-
+    // Load dashboard and analytics
+    await loadDashboard();
+    await loadSpendingAnalytics();
 });
-
-
-

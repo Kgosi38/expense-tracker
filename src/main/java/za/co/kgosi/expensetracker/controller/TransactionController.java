@@ -18,6 +18,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.core.env.Environment;
 
 import za.co.kgosi.expensetracker.dto.CreateTransactionRequest;
 
@@ -34,11 +35,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final Environment environment;
 
     public TransactionController(
-            TransactionService transactionService
+            TransactionService transactionService,
+            Environment environment
     ) {
         this.transactionService = transactionService;
+        this.environment = environment;
+    }
+
+    private boolean isDemoMode() {
+        return environment.matchesProfiles("demo");
     }
 
 
@@ -55,10 +63,19 @@ public class TransactionController {
             );
         }
 
-        @PostMapping
+    @PostMapping
     public ResponseEntity<?> createTransaction(
             @RequestBody CreateTransactionRequest request
     ) {
+        if (isDemoMode()) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "error",
+                            "Read-only demo: creating transactions is disabled."
+                    ));
+        }
+
         try {
             Transaction transaction = new Transaction(
                     request.type(),
@@ -87,6 +104,15 @@ public class TransactionController {
             @PathVariable("id") Long id,
             @RequestBody UpdateTransactionRequest request
     ) {
+        if (isDemoMode()) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "error",
+                            "Read-only demo: editing transactions is disabled."
+                    ));
+        }
+
         try {
             Transaction existingTransaction = transactionService
                     .getAllTransactions()
@@ -125,6 +151,15 @@ public class TransactionController {
     public ResponseEntity<?> deleteTransaction(
             @PathVariable("id") Long id
     ) {
+        if (isDemoMode()) {
+            return ResponseEntity
+                    .status(HttpStatus.FORBIDDEN)
+                    .body(Map.of(
+                            "error",
+                            "Read-only demo: deleting transactions is disabled."
+                    ));
+        }
+
         try {
             Transaction existingTransaction = transactionService
                     .getAllTransactions()
