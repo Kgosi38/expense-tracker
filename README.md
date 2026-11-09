@@ -34,6 +34,27 @@ It includes a **responsive web dashboard**, a **REST API**, and a **command-line
 - Monthly financial calculations
 - Automated unit and integration testing
 
+
+## Application Screenshots
+
+### Dashboard and Monthly Financial Report
+
+View total income, expenses, current balance and monthly financial summaries.
+
+![Expense Tracker Dashboard](screenshots/![dashboard1.png](screenshots/dashboard1.png)
+
+### Spending Analytics
+
+Visualize monthly spending by category using interactive charts that update when transactions are added, edited or deleted.
+
+![Spending Analytics](screenshots/spending-analytics.png)
+
+### Transaction History
+
+Search, filter, sort, edit and delete financial transactions.
+
+![Transaction History](screenshots/transaction-history.png)
+
 ## Technology Stack
 
 | Technology | Purpose |
