@@ -91,6 +91,41 @@ async function loadTransactions() {
         // Store the latest transactions
         allTransactions = transactions;
 
+
+const sortOption =
+    document.getElementById("transaction-sort").value;
+
+switch (sortOption) {
+    case "date-newest":
+        transactions.sort((a, b) =>
+            b.date.localeCompare(a.date) || b.id - a.id
+        );
+        break;
+
+    case "date-oldest":
+        transactions.sort((a, b) =>
+            a.date.localeCompare(b.date) || a.id - b.id
+        );
+        break;
+
+    case "amount-high":
+        transactions.sort((a, b) =>
+            b.amount - a.amount
+        );
+        break;
+
+    case "amount-low":
+        transactions.sort((a, b) =>
+            a.amount - b.amount
+        );
+        break;
+
+    default:
+        // Keep the original order returned by the API
+        break;
+}
+
+
         const tableBody =
             document.getElementById("transaction-list");
 
@@ -259,13 +294,18 @@ async function addTransaction(event) {
             body: JSON.stringify(transaction)
         });
 
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(
-                errorData.error || "Failed to add transaction"
-            );
-        }
 
+        if (!response.ok) {
+            let errorMessage = "Failed to add transaction.";
+
+        if (response.status === 400) {
+            errorMessage = "Invalid transaction details. Check your amount, category and date.";
+         } else if (response.status >= 500) {
+            errorMessage = "A server error occurred. Please try again later.";
+    }
+
+        throw new Error(errorMessage);
+}
 
 alert("Transaction added successfully!");
 
@@ -276,13 +316,11 @@ updateCategories();
 
 await loadDashboard();
 
-
-    } catch (error) {
-        alert(error.message);
-        console.error("Add transaction error:", error);
-    }
+} catch (error) {
+    console.error("Add transaction error:", error);
+    alert(error.message);
 }
-
+}
 
 function populateCategoryFilter() {
     const categoryFilter =
@@ -431,39 +469,36 @@ function closeEditModal() {
     document.getElementById("edit-modal").hidden = true;
 }
 
+
 document.addEventListener("DOMContentLoaded", () => {
     loadDashboard();
     updateCategories();
     populateCategoryFilter();
 
-
-document.getElementById("category-filter")
-    .addEventListener("change", searchTransactions);
-
-
-
-document.getElementById("transaction-search")
-    .addEventListener("input", searchTransactions);
-
-
-document.getElementById("transaction-filter")
-    .addEventListener("change", searchTransactions);
-
-    // Update category options when transaction type changes
     document.getElementById("type")
         .addEventListener("change", updateCategories);
 
-    // Add a new transaction
     document.getElementById("add-transaction-form")
         .addEventListener("submit", addTransaction);
 
-    // Save edited transaction
     document.getElementById("edit-transaction-form")
         .addEventListener("submit", saveEditedTransaction);
 
-    // Close modal without saving
     document.getElementById("cancel-edit")
         .addEventListener("click", closeEditModal);
+
+    document.getElementById("transaction-search")
+        .addEventListener("input", searchTransactions);
+
+    document.getElementById("transaction-filter")
+        .addEventListener("change", searchTransactions);
+
+    document.getElementById("category-filter")
+        .addEventListener("change", searchTransactions);
+
+    document.getElementById("transaction-sort")
+        .addEventListener("change", loadTransactions);
 });
+
 
 
