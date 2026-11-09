@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Expense Tracker Dashboard</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Expense Tracker</h1>
+    <p>Manage your money with confidence.</p>
+</header>
+
+<main>
+
+    <!-- Financial summary -->
+    <section class="summary">
+        <div class="card">
+            <h2>Total Income</h2>
+            <p id="total-income">R 0.00</p>
+        </div>
+
+        <div class="card">
+            <h2>Total Expenses</h2>
+            <p id="total-expenses">R 0.00</p>
+        </div>
+
+        <div class="card">
+            <h2>Current Balance</h2>
+            <p id="current-balance">R 0.00</p>
+        </div>
+    </section>
+
+    <!-- Add transaction form -->
+    <section class="transaction-form">
+        <h2>Add Transaction</h2>
+
+        <form id="add-transaction-form">
+
+            <label for="type">Type</label>
+            <select id="type" required>
+                <option value="Income">Income</option>
+                <option value="Expense">Expense</option>
+            </select>
+
+            <label for="amount">Amount (R)</label>
+            <input type="number"
+                   id="amount"
+                   min="0.01"
+                   step="0.01"
+                   required>
+
+
+            <label for="category">Category</label>
+            <select id="category" required>
+                <!-- JavaScript will populate the categories -->
+            </select>
+
+            <label for="description">Description</label>
+            <input type="text"
+                   id="description"
+                   maxlength="100"
+                   required>
+
+            <label for="date">Date</label>
+            <input type="date" id="date" required>
+
+            <button type="submit">
+                Add Transaction
+            </button>
+
+        </form>
+    </section>
+
+    <!-- Transactions table -->
+    <section class="transactions">
+        <h2>Transaction History</h2>
+
+
+        <!-- Transaction Search -->
+        <div class="search-container">
+            <label for="transaction-search">
+                Search Transactions
+            </label>
+
+            <input
+                    type="search"
+                    id="transaction-search"
+                    placeholder="Search by description..."
+                    autocomplete="off"
+            >
+        </div>
+
+
+        <!-- Transaction Category Filter -->
+        <div class="filter-container">
+            <label for="category-filter">
+                Filter by Category
+            </label>
+
+            <select id="category-filter">
+                <option value="All">All Categories</option>
+            </select>
+        </div>
+
+
+
+        <!-- Transaction Type Filter -->
+        <div class="filter-container">
+            <label for="transaction-filter">
+                Filter by Type
+            </label>
+
+            <select id="transaction-filter">
+                <option value="All">All Transactions</option>
+                <option value="Income">Income Only</option>
+                <option value="Expense">Expenses Only</option>
+            </select>
+        </div>
+
+
+
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+
+            <tbody id="transaction-list">
+            <!-- JavaScript will add transactions here -->
+            </tbody>
+        </table>
+    </section>
+
+
+    <!-- Edit Transaction Modal -->
+    <div id="edit-modal" class="modal" hidden>
+
+        <div class="modal-content">
+
+            <h2>Edit Transaction</h2>
+
+            <form id="edit-transaction-form">
+
+                <input type="hidden" id="edit-id">
+
+                <label for="edit-amount">Amount (R)</label>
+                <input
+                        type="number"
+                        id="edit-amount"
+                        min="0.01"
+                        step="0.01"
+                        required
+                >
+
+                <label for="edit-category">Category</label>
+                <select id="edit-category" required>
+                </select>
+
+                <label for="edit-description">Description</label>
+                <input
+                        type="text"
+                        id="edit-description"
+                        maxlength="100"
+                        required
+                >
+
+                <label for="edit-date">Date</label>
+                <input
+                        type="date"
+                        id="edit-date"
+                        required
+                >
+
+                <button type="submit">
+                    Save Changes
+                </button>
+
+                <button type="button" id="cancel-edit">
+                    Cancel
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+
+</main>
+
+<script src="app.js"></script>
+
+</body>
+</html>
