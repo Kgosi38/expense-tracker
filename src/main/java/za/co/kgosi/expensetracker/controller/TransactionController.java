@@ -22,6 +22,10 @@ import za.co.kgosi.expensetracker.dto.CreateTransactionRequest;
 import java.util.List;
 import java.math.BigDecimal;
 import java.util.Map;
+import java.time.YearMonth;
+import java.time.format.DateTimeParseException;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -145,6 +149,38 @@ public class TransactionController {
                     .body(Map.of("error", e.getMessage()));
         }
     }
+
+
+    @GetMapping("/report")
+    public ResponseEntity<?> getMonthlyReport(
+            @RequestParam("month") String month
+    ) {
+        try {
+            YearMonth selectedMonth = YearMonth.parse(month);
+
+            BigDecimal income =
+                    transactionService.getMonthlyIncome(selectedMonth);
+
+            BigDecimal expenses =
+                    transactionService.getMonthlyExpenses(selectedMonth);
+
+            BigDecimal balance =
+                    transactionService.getMonthlyBalance(selectedMonth);
+
+            return ResponseEntity.ok(Map.of(
+                    "month", selectedMonth.toString(),
+                    "income", income,
+                    "expenses", expenses,
+                    "balance", balance
+            ));
+
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Invalid month. Use YYYY-MM format.")
+            );
+        }
+    }
+
 
 
 

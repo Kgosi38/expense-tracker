@@ -358,3 +358,63 @@ td {
     white-space: nowrap;
 }
 
+/* Monthly Financial Report */
+
+.monthly-report {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.monthly-report h2 {
+    margin-bottom: 10px;
+}
+
+.monthly-report > p {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.month-selector {
+    margin-bottom: 25px;
+}
+
+.month-selector label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.month-selector input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 16px;
+    box-sizing: border-box;
+}
+
+.report-summary {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.report-summary .card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    .report-summary {
+        grid-template-columns: 1fr;
+    }
+
+    .monthly-report {
+        padding: 18px;
+    }
+}
+

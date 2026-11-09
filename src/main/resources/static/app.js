@@ -285,12 +285,15 @@ function searchTransactions() {
 }
 
 // Load dashboard data
+
 async function loadDashboard() {
     await Promise.all([
         loadBalance(),
-        loadTransactions()
+        loadTransactions(),
+        loadMonthlyReport()
     ]);
 }
+
 
 
 async function addTransaction(event) {
@@ -484,6 +487,40 @@ async function saveEditedTransaction(event) {
     }
 }
 
+
+async function loadMonthlyReport() {
+    const month = document.getElementById("report-month").value;
+
+    if (!month) {
+        return;
+    }
+
+    try {
+        const response = await fetch(
+            `/api/transactions/report?month=${encodeURIComponent(month)}`
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to load monthly report.");
+        }
+
+        const report = await response.json();
+
+        document.getElementById("monthly-income").textContent =
+            formatCurrency(report.income);
+
+        document.getElementById("monthly-expenses").textContent =
+            formatCurrency(report.expenses);
+
+        document.getElementById("monthly-balance").textContent =
+            formatCurrency(report.balance);
+
+    } catch (error) {
+        console.error("Monthly report error:", error);
+    }
+}
+
+
 function closeEditModal() {
     document.getElementById("edit-modal").hidden = true;
 }
@@ -517,6 +554,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("transaction-sort")
         .addEventListener("change", loadTransactions);
+
+
+const reportMonth = document.getElementById("report-month");
+
+reportMonth.value = new Date().toLocaleDateString("en-CA").slice(0, 7);
+
+
+const today = new Date();
+reportMonth.value =
+    `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
+
+
+loadMonthlyReport();
+
 });
 
 

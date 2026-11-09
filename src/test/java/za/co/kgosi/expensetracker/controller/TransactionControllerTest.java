@@ -227,8 +227,74 @@ class TransactionControllerTest {
     }
 
 
+    @Test
+    void shouldReturnMonthlyReport() throws Exception {
+
+        String incomeTransaction = """
+        {
+            "type": "Income",
+            "amount": 5000.00,
+            "category": "Salary",
+            "description": "November salary",
+            "date": "2026-11-05"
+        }
+        """;
+
+        String expenseTransaction = """
+        {
+            "type": "Expense",
+            "amount": 1100.00,
+            "category": "Food",
+            "description": "November groceries",
+            "date": "2026-11-08"
+        }
+        """;
+
+        // Create an income transaction
+        mockMvc.perform(post("/api/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(incomeTransaction))
+                .andExpect(status().isCreated());
+
+        // Create an expense transaction
+        mockMvc.perform(post("/api/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(expenseTransaction))
+                .andExpect(status().isCreated());
+
+        // Request the monthly financial report
+        mockMvc.perform(get("/api/transactions/report")
+                        .param("month", "2026-11"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.month").value("2026-11"))
+                .andExpect(jsonPath("$.income").value(5000.00))
+                .andExpect(jsonPath("$.expenses").value(1100.00))
+                .andExpect(jsonPath("$.balance").value(3900.00));
+    }
 
 
+    @Test
+    void shouldRejectInvalidMonth() throws Exception {
+
+        mockMvc.perform(get("/api/transactions/report")
+                        .param("month", "November"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error")
+                        .value("Invalid month. Use YYYY-MM format."));
+    }
+
+
+    @Test
+    void shouldReturnZeroForEmptyMonth() throws Exception {
+
+        mockMvc.perform(get("/api/transactions/report")
+                        .param("month", "2027-01"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.month").value("2027-01"))
+                .andExpect(jsonPath("$.income").value(0))
+                .andExpect(jsonPath("$.expenses").value(0))
+                .andExpect(jsonPath("$.balance").value(0));
+    }
 
 
 
