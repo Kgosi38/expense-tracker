@@ -218,12 +218,11 @@ switch (sortOption) {
 
 
 
+
 function searchTransactions() {
     const searchText = document
         .getElementById("transaction-search")
-        .value
-        .trim()
-        .toLowerCase();
+        .value.trim().toLowerCase();
 
     const selectedType = document
         .getElementById("transaction-filter")
@@ -233,37 +232,57 @@ function searchTransactions() {
         .getElementById("category-filter")
         .value;
 
-    const rows = document.querySelectorAll(
-        "#transaction-list tr"
+    const tableBody = document.getElementById("transaction-list");
+
+    const rows = tableBody.querySelectorAll(
+        "tr:not([data-empty-message])"
     );
+
+    let visibleCount = 0;
 
     rows.forEach(row => {
         const description = row.dataset.description || "";
         const type = row.dataset.type || "";
         const category = row.dataset.category || "";
 
-        const matchesSearch =
-            description.includes(searchText);
-
+        const matchesSearch = description.includes(searchText);
         const matchesType =
             selectedType === "All" || type === selectedType;
-
         const matchesCategory =
-            selectedCategory === "All" ||
-            category === selectedCategory;
+            selectedCategory === "All" || category === selectedCategory;
 
-        row.hidden = !(
-            matchesSearch &&
-            matchesType &&
-            matchesCategory
-        );
+        const visible =
+            matchesSearch && matchesType && matchesCategory;
+
+        row.hidden = !visible;
+
+        if (visible) {
+            visibleCount++;
+        }
     });
+
+    const oldMessage = tableBody.querySelector(
+        "[data-empty-message]"
+    );
+
+    if (oldMessage) {
+        oldMessage.remove();
+    }
+
+    if (visibleCount === 0 && rows.length > 0) {
+        const row = document.createElement("tr");
+        row.dataset.emptyMessage = "true";
+
+        const cell = document.createElement("td");
+        cell.colSpan = 6;
+        cell.textContent = "No matching transactions found. Try another search or filter.";
+        cell.className = "empty-results";
+
+
+        row.appendChild(cell);
+        tableBody.appendChild(row);
+    }
 }
-
-
-
-
-
 
 // Load dashboard data
 async function loadDashboard() {

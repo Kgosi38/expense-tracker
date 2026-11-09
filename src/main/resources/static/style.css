@@ -324,3 +324,37 @@ td {
     border-color: #2563eb;
 }
 
+/* Empty search results */
+.empty-results {
+    text-align: center;
+    padding: 28px 16px;
+    color: #64748b;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* Mobile-friendly transaction table */
+
+.table-container {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-container table {
+    width: 100%;
+    min-width: 650px;
+    border-collapse: collapse;
+}
+
+.table-container th,
+.table-container td {
+    padding: 12px;
+    text-align: left;
+}
+
+.table-container th {
+    white-space: nowrap;
+}
+
