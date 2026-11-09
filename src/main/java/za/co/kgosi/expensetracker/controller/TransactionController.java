@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 
 import za.co.kgosi.expensetracker.dto.UpdateTransactionRequest;
+import za.co.kgosi.expensetracker.model.Category;
+
 
 import za.co.kgosi.expensetracker.model.Transaction;
 import za.co.kgosi.expensetracker.service.TransactionService;
@@ -180,6 +182,31 @@ public class TransactionController {
             );
         }
     }
+
+    @GetMapping("/analytics")
+    public ResponseEntity<?> getSpendingAnalytics(
+            @RequestParam("month") String month
+    ) {
+        try {
+            YearMonth selectedMonth = YearMonth.parse(month);
+
+            Map<Category, BigDecimal> categoryTotals =
+                    transactionService.getMonthlyExpensesByCategory(
+                            selectedMonth
+                    );
+
+            return ResponseEntity.ok(Map.of(
+                    "month", selectedMonth.toString(),
+                    "categories", categoryTotals
+            ));
+
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(
+                    Map.of("error", "Invalid month. Use YYYY-MM format.")
+            );
+        }
+    }
+
 
 
 

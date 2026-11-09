@@ -10,6 +10,9 @@ import java.util.List;
 import za.co.kgosi.expensetracker.model.Category;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.Map;
+import java.util.EnumMap;
+
 
 import java.sql.SQLException;
 
@@ -189,6 +192,34 @@ public class TransactionService {
 
         return income.subtract(expenses);
     }
+
+    public Map<Category, BigDecimal> getMonthlyExpensesByCategory(
+            YearMonth month
+    ) {
+        Map<Category, BigDecimal> categoryTotals =
+                new EnumMap<>(Category.class);
+
+        List<Transaction> monthlyTransactions =
+                getTransactionsByMonth(month);
+
+        for (Transaction transaction : monthlyTransactions) {
+
+            if (transaction.getType() == TransactionType.EXPENSE) {
+
+                Category category = transaction.getCategory();
+                BigDecimal amount = transaction.getAmount();
+
+                categoryTotals.merge(
+                        category,
+                        amount,
+                        BigDecimal::add
+                );
+            }
+        }
+
+        return categoryTotals;
+    }
+
 
     public void updateTransaction(
             Transaction transaction,

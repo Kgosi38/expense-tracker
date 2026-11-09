@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -295,6 +296,56 @@ class TransactionControllerTest {
                 .andExpect(jsonPath("$.expenses").value(0))
                 .andExpect(jsonPath("$.balance").value(0));
     }
+
+    @Test
+    void shouldReturnSpendingAnalytics() throws Exception {
+
+        mockMvc.perform(post("/api/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "type": "Expense",
+                                "amount": 100.00,
+                                "category": "Food",
+                                "description": "Groceries",
+                                "date": "2026-11-05"
+                            }
+                            """))
+                .andDo(print())
+                .andExpect(status().isCreated());
+
+
+        mockMvc.perform(post("/api/transactions")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                            {
+                                "type": "Expense",
+                                "amount": 150.00,
+                                "category": "Food",
+                                "description": "Lunch",
+                                "date": "2026-11-08"
+                            }
+                            """))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(get("/api/transactions/analytics")
+                        .param("month", "2026-11"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.month").value("2026-11"))
+                .andExpect(jsonPath("$.categories.Food").value(250.00));
+    }
+
+    @Test
+    void shouldRejectInvalidAnalyticsMonth() throws Exception {
+
+        mockMvc.perform(get("/api/transactions/analytics")
+                        .param("month", "November"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error")
+                        .value("Invalid month. Use YYYY-MM format."));
+    }
+
+
 
 
 

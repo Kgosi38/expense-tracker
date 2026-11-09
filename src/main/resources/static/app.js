@@ -296,6 +296,7 @@ async function loadDashboard() {
 
 
 
+
 async function addTransaction(event) {
     event.preventDefault();
 
@@ -316,32 +317,38 @@ async function addTransaction(event) {
             body: JSON.stringify(transaction)
         });
 
-
         if (!response.ok) {
             let errorMessage = "Failed to add transaction.";
 
-        if (response.status === 400) {
-            errorMessage = "Invalid transaction details. Check your amount, category and date.";
-         } else if (response.status >= 500) {
-            errorMessage = "A server error occurred. Please try again later.";
+            if (response.status === 400) {
+                errorMessage =
+                    "Invalid transaction details. Check your amount, category and date.";
+            } else if (response.status >= 500) {
+                errorMessage =
+                    "A server error occurred. Please try again later.";
+            }
+
+            throw new Error(errorMessage);
+        }
+
+        alert("Transaction added successfully!");
+
+        // Clear the transaction form
+        document.getElementById("add-transaction-form").reset();
+
+        // Refresh categories to match the reset transaction type
+        updateCategories();
+
+        // Refresh the dashboard
+        await loadDashboard();
+
+        // Refresh the Spending Analytics chart
+        await loadSpendingAnalytics();
+
+    } catch (error) {
+        console.error("Add transaction error:", error);
+        alert(error.message);
     }
-
-        throw new Error(errorMessage);
-}
-
-alert("Transaction added successfully!");
-
-document.getElementById("add-transaction-form").reset();
-
-// Refresh categories to match the reset transaction type
-updateCategories();
-
-await loadDashboard();
-
-} catch (error) {
-    console.error("Add transaction error:", error);
-    alert(error.message);
-}
 }
 
 function populateCategoryFilter() {
@@ -376,6 +383,7 @@ function populateCategoryFilter() {
 }
 
 
+
 async function deleteTransaction(id) {
 
     const confirmed = confirm(
@@ -397,13 +405,18 @@ async function deleteTransaction(id) {
 
         alert("Transaction deleted successfully!");
 
+        // Refresh the dashboard and transaction history
         await loadDashboard();
+
+        // Refresh Spending Analytics
+        await loadSpendingAnalytics();
 
     } catch (error) {
         alert(error.message);
         console.error("Delete error:", error);
     }
 }
+
 
 
 function editTransaction(transaction) {
@@ -446,6 +459,7 @@ function editTransaction(transaction) {
     document.getElementById("edit-modal").hidden = false;
 }
 
+
 async function saveEditedTransaction(event) {
     event.preventDefault();
 
@@ -473,19 +487,23 @@ async function saveEditedTransaction(event) {
             throw new Error("Failed to update transaction");
         }
 
-        // Close the modal
+        // Close the editing modal
         document.getElementById("edit-modal").hidden = true;
 
-        // Refresh the dashboard
+        // Refresh the dashboard and transaction history
         await loadDashboard();
+
+        // Refresh Spending Analytics
+        await loadSpendingAnalytics();
 
         alert("Transaction updated successfully!");
 
     } catch (error) {
-        console.error(error);
+        console.error("Edit transaction error:", error);
         alert("Could not update transaction. Please try again.");
     }
 }
+
 
 
 async function loadMonthlyReport() {
@@ -525,6 +543,90 @@ function closeEditModal() {
     document.getElementById("edit-modal").hidden = true;
 }
 
+async function loadSpendingAnalytics() {
+    const monthInput = document.getElementById("analyticsMonth");
+    const chart = document.getElementById("spendingChart");
+
+    const selectedMonth = monthInput.value;
+
+    if (!selectedMonth) {
+        chart.textContent = "Please select a month.";
+        return;
+    }
+
+    chart.textContent = "Loading spending analytics...";
+
+    try {
+        const response = await fetch(
+            `/api/transactions/analytics?month=${encodeURIComponent(selectedMonth)}`
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to load spending analytics");
+        }
+
+        const data = await response.json();
+
+
+const categories = data.categories;
+
+chart.innerHTML = "";
+
+const entries = Object.entries(categories);
+
+if (entries.length === 0) {
+    chart.textContent = "No expenses found for this month.";
+    return;
+}
+
+const highestAmount = Math.max(
+    ...entries.map(([category, amount]) => Number(amount))
+);
+
+entries.sort((a, b) => Number(b[1]) - Number(a[1]));
+
+entries.forEach(([category, amount]) => {
+    const percentage = (Number(amount) / highestAmount) * 100;
+
+    const container = document.createElement("div");
+    container.className = "spending-bar-container";
+
+    const label = document.createElement("div");
+    label.className = "spending-bar-label";
+
+    const categoryName = document.createElement("span");
+    categoryName.textContent = category;
+
+    const categoryAmount = document.createElement("span");
+    categoryAmount.textContent = `R${Number(amount).toFixed(2)}`;
+
+    label.appendChild(categoryName);
+    label.appendChild(categoryAmount);
+
+    const track = document.createElement("div");
+    track.className = "spending-bar-track";
+
+    const fill = document.createElement("div");
+    fill.className = "spending-bar-fill";
+    fill.style.width = `${percentage}%`;
+
+    track.appendChild(fill);
+
+    container.appendChild(label);
+    container.appendChild(track);
+
+    chart.appendChild(container);
+});
+
+
+    } catch (error) {
+        console.error(error);
+        chart.textContent = "Unable to load spending analytics.";
+    }
+}
+
+document.getElementById("analyticsMonth")
+    .addEventListener("change", loadSpendingAnalytics);
 
 document.addEventListener("DOMContentLoaded", () => {
     loadDashboard();

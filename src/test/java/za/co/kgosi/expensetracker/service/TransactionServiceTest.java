@@ -14,6 +14,9 @@ import java.util.List;
 import java.time.YearMonth;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Map;
+
+
 
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -1530,4 +1533,142 @@ class TransactionServiceTest {
             Files.deleteIfExists(databaseFile);
         }
     }
+
+    @Test
+    void shouldCalculateMonthlyExpensesByCategory() {
+
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("100.00"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 5)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150.00"),
+                Category.FOOD,
+                "Lunch",
+                LocalDate.of(2026, 11, 8)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200.00"),
+                Category.TRANSPORT,
+                "Taxi fare",
+                LocalDate.of(2026, 11, 9)
+        ));
+
+        Map<Category, BigDecimal> totals =
+                service.getMonthlyExpensesByCategory(
+                        YearMonth.of(2026, 11)
+                );
+
+        assertEquals(
+                0,
+                new BigDecimal("250.00")
+                        .compareTo(totals.get(Category.FOOD))
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("200.00")
+                        .compareTo(totals.get(Category.TRANSPORT))
+        );
+
+        assertEquals(2, totals.size());
+    }
+
+    @Test
+    void shouldExcludeIncomeFromMonthlyExpensesByCategory() {
+
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.INCOME,
+                new BigDecimal("5000.00"),
+                Category.SALARY,
+                "Monthly salary",
+                LocalDate.of(2026, 11, 5)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200.00"),
+                Category.FOOD,
+                "Groceries",
+                LocalDate.of(2026, 11, 8)
+        ));
+
+        Map<Category, BigDecimal> totals =
+                service.getMonthlyExpensesByCategory(
+                        YearMonth.of(2026, 11)
+                );
+
+        assertEquals(1, totals.size());
+
+        assertEquals(
+                0,
+                new BigDecimal("200.00")
+                        .compareTo(totals.get(Category.FOOD))
+        );
+
+        assertFalse(totals.containsKey(Category.SALARY));
+    }
+
+    @Test
+    void shouldExcludeExpensesFromOtherMonths() {
+
+        TransactionService service = new TransactionService();
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("300.00"),
+                Category.FOOD,
+                "October groceries",
+                LocalDate.of(2026, 10, 15)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("150.00"),
+                Category.FOOD,
+                "November groceries",
+                LocalDate.of(2026, 11, 5)
+        ));
+
+        service.addTransaction(new Transaction(
+                TransactionType.EXPENSE,
+                new BigDecimal("200.00"),
+                Category.TRANSPORT,
+                "November transport",
+                LocalDate.of(2026, 11, 8)
+        ));
+
+        Map<Category, BigDecimal> totals =
+                service.getMonthlyExpensesByCategory(
+                        YearMonth.of(2026, 11)
+                );
+
+        assertEquals(2, totals.size());
+
+        assertEquals(
+                0,
+                new BigDecimal("150.00")
+                        .compareTo(totals.get(Category.FOOD))
+        );
+
+        assertEquals(
+                0,
+                new BigDecimal("200.00")
+                        .compareTo(totals.get(Category.TRANSPORT))
+        );
+    }
+
+
+
 }
