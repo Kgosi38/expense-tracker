@@ -14,7 +14,7 @@ RUN mvn dependency:go-offline -B
 COPY src ./src
 
 # Build the Spring Boot application
-RUN mvn clean package -DskipTests -B
+RUN mvn clean package spring-boot:repackage -DskipTests -B
 
 
 # Stage 2: Run the application using Java 26
