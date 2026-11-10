@@ -1,238 +1,171 @@
-# Java Expense Tracker
 
-![Java CI](https://github.com/Kgosi38/expense-tracker/actions/workflows/java-ci.yml/badge.svg)
+# Expense Tracker
 
-A full-stack expense management application built with **Java 26, Spring Boot 4, Maven, SQLite, HTML, CSS and JavaScript**.
+A full-stack financial management application built with Java, Spring Boot, SQLite, HTML, CSS and JavaScript.
 
-The application helps users track income and expenses, manage financial transactions, calculate balances, generate monthly reports and visualize spending patterns.
+The application allows users to record income and expenses, manage transactions, generate monthly financial reports and explore spending analytics through a responsive web dashboard.
 
-It includes a **responsive web dashboard**, a **REST API**, and a **command-line interface (CLI)**.
+A public read-only demonstration is available with fictional financial data.
+
+## Live Demo
+
+**[Launch Expense Tracker](https://expense-tracker-7ro6.onrender.com)**
+
+**[View GitHub Repository](https://github.com/Kgosi38/expense-tracker)**
+
+The public demo allows visitors to explore the dashboard, search and filter transactions, and view financial reports without modifying data.
 
 ## Features
 
-### Financial Management
+### Transaction Management
 - Add income and expense transactions
-- View, edit and delete transactions
-- Calculate total income, expenses and available balance
-- Filter transactions by category and month
-- Sort and manage transaction history
-- Store transaction data persistently using SQLite
+- Edit existing transactions
+- Delete transactions
+- Categorise financial activity
+- Store transaction details in SQLite
 
-### Web Dashboard
-- Responsive interface built with HTML, CSS and JavaScript
-- Transaction entry form and transaction history
-- Financial balance overview
-- Monthly financial reports
-- Spending Analytics with category-based visualizations
-- Automatic chart updates when transactions are added, edited or deleted
-
-### Backend and API
-- RESTful API built with Spring Boot
-- Layered application architecture
-- SQLite database integration using JDBC
-- Transaction validation and error handling
-- Monthly financial calculations
-- Automated unit and integration testing
-
-
-## Application Screenshots
-
-### Dashboard and Monthly Financial Report
-
-View total income, expenses, current balance and monthly financial summaries.
-
-![Expense Tracker Dashboard](screenshots/![dashboard1.png](screenshots/dashboard1.png)
-
-### Spending Analytics
-
-Visualize monthly spending by category using interactive charts that update when transactions are added, edited or deleted.
-
-![Spending Analytics](screenshots/spending-analytics.png)
+### Financial Dashboard
+- Total income
+- Total expenses
+- Current balance
+- Currency formatting in South African Rand (ZAR)
 
 ### Transaction History
+- Search transactions by description
+- Filter by transaction type
+- Filter by category
+- Sort by date or amount
 
-Search, filter, sort, edit and delete financial transactions.
+### Monthly Financial Reports
+- Select a reporting month
+- Calculate monthly income
+- Calculate monthly expenses
+- Calculate monthly balance
 
-![Transaction History](screenshots/transaction-history.png)
+### Spending Analytics
+- Visualise expenses by category
+- Compare spending amounts
+- Analyse spending for selected months
+
+### Read-Only Demo Mode
+- Automatically loads fictional sample transactions
+- Displays a demo information banner
+- Hides transaction modification controls
+- Prevents transaction creation, updates and deletion through backend restrictions
+- Uses a separate SQLite demo database
 
 ## Technology Stack
 
-| Technology | Purpose |
+| Layer | Technology |
 |---|---|
-| Java 26 | Core application and business logic |
-| Spring Boot 4 | REST API and backend configuration |
-| Maven | Dependency management and build automation |
-| SQLite | Relational database |
-| JDBC | Database connectivity |
-| HTML5 | Frontend structure |
-| CSS3 | Responsive styling |
-| JavaScript | Frontend functionality and API integration |
-| JUnit 5 | Unit testing |
-| Spring MockMvc | API integration testing |
-| GitHub Actions | Continuous integration |
-| Git and GitHub | Version control and project hosting |
+| Backend | Java 26, Spring Boot 4 |
+| Frontend | HTML5, CSS3, JavaScript |
+| Database | SQLite |
+| API | REST |
+| Build Tool | Apache Maven |
+| Testing | JUnit 5, Spring Boot Test, MockMvc |
+| Deployment | Docker, Render |
+| Version Control | Git, GitHub |
 
-## Project Architecture
+## Architecture
 
-The application follows a layered architecture to separate responsibilities.
+The application follows a layered backend architecture:
 
-- `model` - Transaction models, categories and transaction types
-- `database` - SQLite database initialization
-- `repository` - Database operations and persistence
-- `service` - Business logic and financial calculations
-- `controller` - REST API endpoints
-- `dto` - API request data structures
-- `config` - Application configuration
-- `src/main/resources/static` - Web dashboard files
-- `Main.java` - Command-line interface
-- `ExpenseTrackerApplication.java` - Spring Boot entry point
+- **Controller:** Handles HTTP requests and REST API responses
+- **Service:** Implements business logic and financial calculations
+- **Repository:** Handles SQLite database operations
+- **Model:** Represents transactions and their properties
+- **Frontend:** Communicates with the backend using JavaScript Fetch API
+
+The application uses a separate Spring Boot profile for the public demonstration.
 
 ## REST API Endpoints
 
 | Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/health` | Check application health |
-| GET | `/api/transactions` | Retrieve all transactions |
-| GET | `/api/transactions/balance` | Retrieve financial balance information |
+| GET | `/api/health` | Check API health |
+| GET | `/api/transactions` | Retrieve transactions |
 | POST | `/api/transactions` | Create a transaction |
-| PUT | `/api/transactions/{id}` | Update an existing transaction |
+| PUT | `/api/transactions/{id}` | Update a transaction |
 | DELETE | `/api/transactions/{id}` | Delete a transaction |
-| GET | `/api/transactions/report?month=YYYY-MM` | Generate a monthly financial report |
-| GET | `/api/transactions/analytics?month=YYYY-MM` | Retrieve spending totals grouped by category |
+| GET | `/api/transactions/balance` | Retrieve financial totals |
+| GET | `/api/transactions/report?month=YYYY-MM` | Retrieve monthly report |
+| GET | `/api/transactions/analytics?month=YYYY-MM` | Retrieve spending analytics |
+| GET | `/api/demo-mode` | Check whether demo mode is active |
 
-### Example: Create a Transaction
+Write operations are disabled when the demo profile is active.
 
-**POST** `/api/transactions`
-
-```json
-{
-  "type": "Expense",
-  "amount": 150.00,
-  "category": "Food",
-  "description": "Lunch",
-  "date": "2026-11-08"
-}
-```
-
-A successful request creates a transaction and returns HTTP `201 Created`.
-
-### Example: Spending Analytics
-
-**GET** `/api/transactions/analytics?month=2026-11`
-
-Example response:
-
-```json
-{
-  "month": "2026-11",
-  "categories": {
-    "Food": 350.00,
-    "Transport": 200.00,
-    "Clothing": 500.00
-  }
-}
-```
-
-The web dashboard uses this endpoint to display category-based spending charts.
-
-## Getting Started
+## Running Locally
 
 ### Requirements
 
-- Java 26 JDK
-- Maven
+- Java 26
+- Apache Maven
 - Git
 
-### Installation
-
-Clone the repository:
+### 1. Clone the repository
 
 ```bash
 git clone https://github.com/Kgosi38/expense-tracker.git
-```
-
-Navigate to the project directory:
-
-```bash
 cd expense-tracker
 ```
 
-Run the automated tests:
+### 2. Run the automated tests
 
 ```bash
 mvn clean test
 ```
 
-### Run the Web Application
-
-Start `ExpenseTrackerApplication.java` from IntelliJ IDEA.
-
-Alternatively, run:
+### 3. Start the application
 
 ```bash
 mvn spring-boot:run
 ```
 
-Open your browser and visit:
+Open:
 
 http://localhost:8080
 
-The dashboard allows you to manage transactions, view financial reports and analyze monthly spending.
+### 4. Run in demo mode
 
-### Run the Command-Line Application
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=demo -Dspring-boot.run.arguments=--server.port=8081
+```
 
-Run `Main.java` using IntelliJ IDEA.
+Open:
 
-The CLI provides an interactive menu for managing financial transactions.
+http://localhost:8081
 
-## Automated Testing
+## Testing
 
-The project currently includes **80 passing automated tests** covering backend functionality, database operations, business logic and REST API integration.
+The project includes automated backend tests covering transaction functionality and demo-mode restrictions.
 
-- Transaction model validation
-- Business logic and financial calculations
-- SQLite database initialization
-- Repository CRUD operations
-- REST API requests using Spring MockMvc
-- Transaction creation, retrieval, updating and deletion
-- Monthly spending calculations
-- Spending Analytics API responses
-- Invalid input handling
-- HTTP error responses
-
-Run all tests:
+Run:
 
 ```bash
 mvn clean test
 ```
 
-GitHub Actions provides automated CI testing for the repository.
+## Deployment
+
+The application is containerised using a multi-stage Dockerfile and deployed as a Docker web service on Render.
+
+The deployed application uses the `demo` Spring Boot profile.
+
+**Note:** SQLite files on hosting services with ephemeral storage may be reset when an instance restarts or is redeployed. The public demonstration uses fictional data and is designed for read-only exploration.
 
 ## Future Improvements
 
-- User authentication and authorization
-- CSV and PDF financial report exports
-- API documentation using OpenAPI/Swagger
-- Additional financial visualizations
-- Expanded frontend automated testing
-- Deployment to a public hosting environment
-
-## Project Status
-
-**Active Development**
-
-The project currently has **80 passing automated tests**, with continuous integration configured through GitHub Actions.
-
-The application currently includes a functional Java backend, SQLite persistence, REST API, command-line interface and responsive web dashboard.
-
-Monthly financial reports and Spending Analytics are implemented and tested.
-
-Additional improvements are planned.
+- User authentication and account management
+- PostgreSQL support for persistent cloud storage
+- Budget planning and spending limits
+- Exportable financial reports
+- Additional automated and integration tests
 
 ## Author
 
 **Kgosi Mogogole**
 
-Computer Science Student | Aspiring Java Backend Developer
+Computer Science Student | Aspiring Software Developer
 
-GitHub: https://github.com/Kgosi38
+GitHub: [Kgosi38](https://github.com/Kgosi38)
